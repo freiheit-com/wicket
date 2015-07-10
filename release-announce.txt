@@ -1,0 +1,97 @@
+The Apache Wicket PMC is proud to announce Apache Wicket 7.0.0!
+
+    This release marks another minor release of Wicket 7. We
+    use semantic versioning for the development of Wicket, and as such no
+    API breaks are present breaks are present in this release compared to
+    7.0.0.
+
+    New and noteworthy
+    ------------------
+
+    <OPTIONAL>
+
+    Using this release
+    ------------------
+
+    With Apache Maven update your dependency to (and don't forget to
+    update any other dependencies on Wicket projects to the same version):
+
+    <dependency>
+        <groupId>org.apache.wicket</groupId>
+        <artifactId>wicket-core</artifactId>
+        <version>7.0.0</version>
+    </dependency>
+
+    Or download and build the distribution yourself, or use our
+    convenience binary package
+
+     * Source: http://www.apache.org/dyn/closer.cgi/wicket/7.0.0
+     * Binary: http://www.apache.org/dyn/closer.cgi/wicket/7.0.0/binaries
+
+    Upgrading from earlier versions
+    -------------------------------
+
+    If you upgrade from 7.y.z this release is a drop in replacement. If
+    you come from a version prior to 7.0.0, please read our Wicket 7
+    migration guide found at
+
+     * http://s.apache.org/wicket7migrate
+
+    Have fun!
+
+    — The Wicket team
+
+    
+========================================================================
+
+    The signatures for the source release artefacts:
+
+    
+Signature for apache-wicket-7.0.0.zip:
+
+    -----BEGIN PGP SIGNATURE-----
+Comment: GPGTools - https://gpgtools.org
+
+iEYEABECAAYFAlWffD4ACgkQJBX8W/xy/UXQ5gCcCyu+1/xu0Pes2k3zrg7E3M3s
+T/EAnR5ogOoMWFQdh7U5Av9zdpbO1ZQ5
+=cXiK
+-----END PGP SIGNATURE-----
+    
+Signature for apache-wicket-7.0.0.tar.gz:
+
+    -----BEGIN PGP SIGNATURE-----
+Comment: GPGTools - https://gpgtools.org
+
+iEYEABECAAYFAlWffD4ACgkQJBX8W/xy/UU8lgCbBTNnY8dKh/8s8GRRKbASciHV
+zA0AoKTzkOC4SCYBm7OY3VWvs3NvyxSo
+=CR1U
+-----END PGP SIGNATURE-----
+    
+========================================================================
+
+    CHANGELOG for 7.0.0:
+    
+** Bug
+
+    * [WICKET-5909] - Session style is not taken into account when loading mounted resources.
+    * [WICKET-5924] - FileUploadField does not work with Servlet 3.0 multipart config
+    * [WICKET-5927] - Velocity remote code execution
+    * [WICKET-5939] - AjaxEventBehavior should not lower-case the event name
+    * [WICKET-5942] - TestCase failure after cfa36fbea621
+    * [WICKET-5944] - CSRF prevention does not work with https URLs on the default port
+    * [WICKET-5946] - JavaScript/Css PackageResource should use the same charset for compressing
+
+** Improvement
+
+    * [WICKET-5922] - IoC: Optionally use objensis for proxy creation to inject concrete classes without default ctor
+    * [WICKET-5926] - Arquillian Support with Container ServletContext in BaseWicketTester/WicketTester.
+    * [WICKET-5928] - Move WicketTestCase from tests to main so that it is reusable by other Wicket modules and applications.
+    * [WICKET-5929] - Introduce IPartialPageRequestHandler
+    * [WICKET-5930] - Upgrade Atmosphere to 2.2.7
+    * [WICKET-5931] - Improve generics for ListView: don't use wildcard for T
+    * [WICKET-5932] - Allow empty column list for DataTable
+    * [WICKET-5933] - Avoid serialization of untouched page after ajax request
+    * [WICKET-5935] - IoC Guice: cache proxies and fail on creation when binding is missing
+    * [WICKET-5936] - simplify cdata escaping for ajax-response
+    * [WICKET-5945] - add a new topic/listener that notifies of Ajax calls done
+

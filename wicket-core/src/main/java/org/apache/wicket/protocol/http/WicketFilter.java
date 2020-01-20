@@ -256,17 +256,17 @@ public class WicketFilter implements Filter
 		// Assume we are able to handle the request
 		boolean res = true;
 
-		if (requestCycle.processRequestAndDetach())
-		{
-			webResponse.flush();
-		}
-		else
+		if (!requestCycle.processRequestAndDetach())
 		{
 			if (chain != null)
 			{
 				chain.doFilter(httpServletRequest, httpServletResponse);
 			}
 			res = false;
+		}
+		else
+		{
+			webResponse.flush();
 		}
 		return res;
 	}
@@ -385,10 +385,7 @@ public class WicketFilter implements Filter
 				application = applicationFactory.createApplication(this);
 			}
 
-			if (application.getName() == null)
-			{
-				application.setName(filterConfig.getFilterName());
-			}
+			application.setName(filterConfig.getFilterName());
 			application.setWicketFilter(this);
 
 			// Allow the filterPath to be preset via setFilterPath()

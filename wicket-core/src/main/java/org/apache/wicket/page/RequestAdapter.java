@@ -18,7 +18,6 @@ package org.apache.wicket.page;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -129,34 +128,14 @@ public abstract class RequestAdapter
 	}
 
 	/**
-	 * Touches a page, so it will be stored in the page stores
-	 * at the end of the request cycle
-	 *
-	 * @param page The page to mark as dirty
+	 * 
+	 * @param page
 	 */
 	protected void touch(final IManageablePage page)
 	{
 		if (findPage(page.getPageId()) == null)
 		{
 			touchedPages.add(page);
-		}
-	}
-
-	/**
-	 * @param page The page to unmark as dirty, so it won't be stored
-	 *                at the end of the request cycle
-	 */
-	protected void untouch(final IManageablePage page)
-	{
-		Iterator<IManageablePage> iterator = touchedPages.iterator();
-		while (iterator.hasNext())
-		{
-			IManageablePage touchedPage = iterator.next();
-			if (touchedPage.getPageId() == page.getPageId())
-			{
-				iterator.remove();
-				break;
-			}
 		}
 	}
 

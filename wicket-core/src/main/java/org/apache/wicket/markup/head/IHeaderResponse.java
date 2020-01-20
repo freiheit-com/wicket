@@ -38,7 +38,7 @@ public interface IHeaderResponse extends Closeable
 	 * @param item
 	 *            The item to render.
 	 */
-	void render(HeaderItem item);
+	public void render(HeaderItem item);
 
 	/**
 	 * Marks the given object as rendered. The object can be anything (string, resource reference,
@@ -48,7 +48,7 @@ public interface IHeaderResponse extends Closeable
 	 * @param object
 	 *            object to be marked as rendered.
 	 */
-	void markRendered(Object object);
+	public void markRendered(Object object);
 
 	/**
 	 * Returns whether the given object has been marked as rendered.
@@ -65,7 +65,7 @@ public interface IHeaderResponse extends Closeable
 	 *            Object that is queried to be rendered
 	 * @return Whether the object has been marked as rendered during the request
 	 */
-	boolean wasRendered(Object object);
+	public boolean wasRendered(Object object);
 
 	/**
 	 * Returns the response that can be used to write arbitrary text to the head section.
@@ -75,14 +75,14 @@ public interface IHeaderResponse extends Closeable
 	 * 
 	 * @return Response
 	 */
-	Response getResponse();
+	public Response getResponse();
 
 	/**
 	 * Mark Header rendering is completed and subsequent usage will be ignored. If some kind of
 	 * buffering is used internally, this action will mark that the contents has to be flushed out.
 	 */
 	@Override
-	void close();
+	public void close();
 
 	/**
 	 * @return if header rendering is completed and subsequent usage will be ignored

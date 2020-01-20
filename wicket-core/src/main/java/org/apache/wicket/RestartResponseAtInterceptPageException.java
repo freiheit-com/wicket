@@ -198,7 +198,7 @@ public class RestartResponseAtInterceptPageException extends ResetResponseExcept
 		if (data != null)
 		{
 			String url = RequestCycle.get().getUrlRenderer().renderUrl(data.originalUrl);
-			throw new NonResettingRestartException(url);
+			RequestCycle.get().replaceAllRequestHandlers(new RedirectRequestHandler(url));
 		}
 	}
 

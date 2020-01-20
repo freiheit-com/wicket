@@ -216,21 +216,27 @@ public abstract class FormComponent<T> extends LabeledWebMarkupContainer impleme
 				protected String getValue(String variableName)
 				{
 					Object value = vars.get(variableName);
-					
-					if (value == null ||value instanceof String)
+					if (value == null)
 					{
-						return String.valueOf(value);
+						return null;
 					}
-					
-					IConverter converter = getConverter(value.getClass());
-					
-					if (converter == null)
+					else if (value instanceof String)
 					{
-						return Strings.toString(value);
+						// small optimization - no need to bother with conversion
+						// for String vars, e.g. {label}
+						return (String)value;
 					}
 					else
 					{
-						return converter.convertToString(value, getLocale());
+						IConverter converter = getConverter(value.getClass());
+						if (converter == null)
+						{
+							return Strings.toString(value);
+						}
+						else
+						{
+							return converter.convertToString(value, getLocale());
+						}
 					}
 				}
 			}.toString();
@@ -1502,11 +1508,6 @@ public abstract class FormComponent<T> extends LabeledWebMarkupContainer impleme
 		{
 			for (Behavior behavior : getBehaviors())
 			{
-				if (isBehaviorAccepted(behavior) == false)
-				{
-					continue;
-				}
-
 				validator = null;
 				if (behavior instanceof ValidatorAdapter)
 				{
@@ -1621,9 +1622,6 @@ public abstract class FormComponent<T> extends LabeledWebMarkupContainer impleme
 	public static <S> void updateCollectionModel(FormComponent<Collection<S>> formComponent)
 	{
 		Collection<S> convertedInput = formComponent.getConvertedInput();
-		if (convertedInput == null) {
-			convertedInput = Collections.emptyList();
-		}
 
 		Collection<S> collection = formComponent.getModelObject();
 		if (collection == null)
@@ -1640,7 +1638,10 @@ public abstract class FormComponent<T> extends LabeledWebMarkupContainer impleme
 			try
 			{
 				collection.clear();
-				collection.addAll(convertedInput);
+				if (convertedInput != null)
+				{
+					collection.addAll(convertedInput);
+				}
 				modified = true;
 			}
 			catch (UnsupportedOperationException unmodifiable)
@@ -1650,6 +1651,7 @@ public abstract class FormComponent<T> extends LabeledWebMarkupContainer impleme
 					logger.debug("An error occurred while trying to modify the collection attached to "
 							+ formComponent, unmodifiable);
 				}
+
 				collection = new ArrayList<S>(convertedInput);
 			}
 			

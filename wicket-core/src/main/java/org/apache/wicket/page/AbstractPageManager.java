@@ -129,9 +129,4 @@ public abstract class AbstractPageManager implements IPageManager
 	{
 		getRequestAdapter().touch(page);
 	}
-
-	public void untouchPage(IManageablePage page)
-	{
-		getRequestAdapter().untouch(page);
-	}
 }

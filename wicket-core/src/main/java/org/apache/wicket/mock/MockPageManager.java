@@ -91,11 +91,6 @@ public class MockPageManager implements IPageManager
 		}
 	}
 
-	public void untouchPage(IManageablePage page)
-	{
-		pages.remove(page.getPageId());
-	}
-
 	/**
 	 * @see org.apache.wicket.page.IPageManager#getContext()
 	 */

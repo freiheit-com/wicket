@@ -67,13 +67,6 @@ public abstract class AbstractMarkupSourcingStrategy implements IMarkupSourcingS
 			@Override
 			public void component(MarkupContainer resolvingContainer, IVisit<IMarkupFragment> visit)
 			{
-				//prevents possible searching loops
-				if (child == resolvingContainer) 
-				{
-					visit.dontGoDeeper();
-					return;
-				}
-				
 				if (resolvingContainer instanceof IComponentResolver)
 				{
 					visit.dontGoDeeper();
@@ -99,7 +92,7 @@ public abstract class AbstractMarkupSourcingStrategy implements IMarkupSourcingS
 							visit.stop(childMarkup);
 						}
 					}
-				}				
+				}
 			}
 		});
 	}

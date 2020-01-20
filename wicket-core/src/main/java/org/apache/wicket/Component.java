@@ -928,7 +928,7 @@ public abstract class Component
 		finally
 		{
 			// this flag must always be set to false.
-			markRendering(false);
+			setFlag(FLAG_RENDERING, false);
 		}
 	}
 
@@ -3503,7 +3503,7 @@ public abstract class Component
 	 * 
 	 * Adds state change to page.
 	 */
-	protected final void addStateChange()
+	protected void addStateChange()
 	{
 		checkHierarchyChange(this);
 		final Page page = findPage();
@@ -4376,16 +4376,6 @@ public abstract class Component
 		setRequestFlag(RFLAG_ENABLED_IN_HIERARCHY_SET, true);
 		setRequestFlag(RFLAG_ENABLED_IN_HIERARCHY_VALUE, state);
 		return state;
-	}
-	
-	/**
-	 * Says if the component is rendering or not checking the corresponding flag.
-	 * 
-	 * @return true if this component is rendering, false otherwise.
-	 */
-	public final boolean isRendering()
-	{
-		return getFlag(FLAG_RENDERING);
 	}
 
 	/**

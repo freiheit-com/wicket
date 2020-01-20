@@ -49,8 +49,7 @@
 		getAjaxBaseUrl,
 		isUndef,
 		replaceAll,
-		htmlToDomDocument,
-		nodeListToArray;
+		htmlToDomDocument;
 
 	isUndef = function (target) {
 		return (typeof(target) === 'undefined' || target === null);
@@ -96,23 +95,6 @@
 		xmlAsString = xmlAsString.replace(/(\n|\r)-*/g, ''); // remove '\r\n-'. The dash is optional.
 		var xmldoc = Wicket.Xml.parse(xmlAsString);
 		return xmldoc;
-	};
-
-	/**
-	 * Converts a NodeList to an Array
-	 *
-	 * @param nodeList The NodeList to convert
-	 * @returns {Array} The array with document nodes
-	 */
-	nodeListToArray = function (nodeList) {
-		var arr = [],
-			nodeId;
-		if (nodeList && nodeList.length) {
-			for (nodeId = 0; nodeId < nodeList.length; nodeId++) {
-				arr.push(nodeList.item(nodeId));
-			}
-		}
-		return arr;
 	};
 
 	/**
@@ -568,6 +550,9 @@
 		 */
 		doAjax: function (attrs) {
 
+			// keep channel for done()
+			this.channel = attrs.ch;
+
 			var
 				// the headers to use for each Ajax request
 				headers = {
@@ -626,7 +611,7 @@
 					}
 					if (result === false) {
 						Wicket.Log.info("Ajax request stopped because of precondition check, url: " + attrs.u);
-						self.done(attrs);
+						self.done();
 						return false;
 					}
 				}
@@ -710,14 +695,14 @@
 				complete: function (jqXHR, textStatus) {
 
 					context.steps.push(jQuery.proxy(function (notify) {
-						if (attrs.i && context.isRedirecting !== true) {
+						if (attrs.i) {
 							Wicket.DOM.hideIncrementally(attrs.i);
 						}
 
 						self._executeHandlers(attrs.coh, attrs, jqXHR, textStatus);
 						we.publish(topic.AJAX_CALL_COMPLETE, attrs, jqXHR, textStatus);
 
-						self.done(attrs);
+						self.done();
 						return FunctionsExecuter.DONE;
 					}, self));
 
@@ -774,15 +759,14 @@
 					// In case the page isn't really redirected. For example say the redirect is to an octet-stream.
 					// A file download popup will appear but the page in the browser won't change.
 					this.success(context);
-					this.done(context.attrs);
+					this.done();
 
 					var rhttp  = /^http:\/\//,  // checks whether the string starts with http://
 					    rhttps = /^https:\/\//; // checks whether the string starts with https://
 
 					// support/check for non-relative redirectUrl like as provided and needed in a portlet context
 					if (redirectUrl.charAt(0) === '/' || rhttp.test(redirectUrl) || rhttps.test(redirectUrl)) {
-						context.isRedirecting = true;
-						Wicket.Ajax.redirect(redirectUrl);
+						window.location = redirectUrl;
 					}
 					else {
 						var urlDepth = 0;
@@ -806,8 +790,7 @@
 							calculatedRedirect = window.location.protocol + "//" + window.location.host + calculatedRedirect;
 						}
 
-						context.isRedirecting = true;
-						Wicket.Ajax.redirect(calculatedRedirect);
+						window.location = calculatedRedirect;
 					}
 				}
 				else {
@@ -928,45 +911,9 @@
 			this._executeHandlers(attrs.ah, attrs);
 			we.publish(topic.AJAX_CALL_AFTER, attrs);
 
-			// a step to execute in both successful and erroneous completion
-			context.endStep = jQuery.proxy(function(notify) {
-				// remove the iframe and button elements
-				setTimeout(function() {
-					jQuery('#'+iframe.id + '-btn').remove();
-					jQuery(iframe).remove();
-				}, 0);
-
-				var attrs = context.attrs;
-				if (attrs.i && context.isRedirecting !== true) {
-					// hide the indicator
-					Wicket.DOM.hideIncrementally(attrs.i);
-				}
-
-				this._executeHandlers(attrs.coh, attrs, null, null);
-				Wicket.Event.publish(Wicket.Event.Topic.AJAX_CALL_COMPLETE, attrs, null, null);
-
-				this.done(attrs);
-				return FunctionsExecuter.DONE;
-			}, this);
-
-			// an error handler that is used when the connection to the server fails for any reason
-			if (attrs.rt) {
-				context.errorHandle = setTimeout(jQuery.proxy(function () {
-					this.failure(context, null, "No XML response in the IFrame document", "Failure");
-
-					context.steps.push(context.endStep);
-					var executer = new FunctionsExecuter(context.steps);
-					executer.start();
-				}, this), attrs.rt);
-			} else {
-				Wicket.Log.info("Submitting a multipart form without a timeout. " +
-					"Use AjaxRequestAttributes.setRequestTimeout(duration) if need to handle connection timeouts.");
-			}
-
 			// install handler to deal with the ajax response
 			// ... we add the onload event after form submit because chrome fires it prematurely
 			we.add(iframe, "load.handleMultipartComplete", jQuery.proxy(this.handleMultipartComplete, this), context);
-
 
 			// handled, restore state and return true
 			form.action = originalFormAction;
@@ -987,10 +934,6 @@
 			var context = event.data,
 				iframe = event.target,
 				envelope;
-
-			if (!isUndef(context.errorHandle)) {
-				clearTimeout(context.errorHandle);
-			}
 
 			// stop the event
 			event.stopPropagation();
@@ -1016,7 +959,26 @@
 				this.loadedCallback(envelope, context);
 			}
 
-			context.steps.push(context.endStep);
+			context.steps.push(jQuery.proxy(function(notify) {
+				// remove the iframe and button elements
+				setTimeout(function() {
+					jQuery('#'+iframe.id + '-btn').remove();
+					jQuery(iframe).remove();
+				}, 0);
+
+				var attrs = context.attrs;
+				if (attrs.i) {
+					// hide the indicator
+					Wicket.DOM.hideIncrementally(attrs.i);
+				}
+
+				this._executeHandlers(attrs.coh, attrs, null, null);
+				Wicket.Event.publish(Wicket.Event.Topic.AJAX_CALL_COMPLETE, attrs, null, null);
+
+				this.done();
+				return FunctionsExecuter.DONE;
+			}, this));
+
 			var executer = new FunctionsExecuter(context.steps);
 			executer.start();
 		},
@@ -1127,11 +1089,8 @@
 			}, this));
 		},
 
-		done: function (attrs) {
-			this._executeHandlers(attrs.dh, attrs);
-			Wicket.Event.publish(Wicket.Event.Topic.AJAX_CALL_DONE, attrs);
-
-			Wicket.channelManager.done(attrs.ch);
+		done: function () {
+			Wicket.channelManager.done(this.channel);
 		},
 
 		// Adds a closure that replaces a component
@@ -1262,8 +1221,7 @@
 		processRedirect: function (context, node) {
 			var text = Wicket.DOM.text(node);
 			Wicket.Log.info("Redirecting to: " + text);
-			context.isRedirecting = true;
-			Wicket.Ajax.redirect(text);
+			window.location = text;
 		},
 
 		// mark the focused component so that we know if it has been replaced by response
@@ -1549,24 +1507,25 @@
 				} else if (tag === "input" || tag === "textarea") {
 					return Wicket.Form.serializeInput(element);
 				} else {
-					var elements = nodeListToArray(element.getElementsByTagName("input"));
-					elements = elements.concat(nodeListToArray(element.getElementsByTagName("select")));
-					elements = elements.concat(nodeListToArray(element.getElementsByTagName("textarea")));
-
-					var result = [];
-					for (var i = 0; i < elements.length; ++i) {
-						var el = elements[i];
-						if (el.name && el.name !== "") {
-							result = result.concat(Wicket.Form.serializeElement(el));
-						}
-					}
-					return result;
+					return [];
 				}
 			},
 
 			serializeForm: function (form) {
 				var result = [],
-					elements;
+					elements,
+					nodeListToArray,
+					nodeId;
+
+				nodeListToArray = function (nodeList) {
+					var arr = [];
+					if (nodeList && nodeList.length) {
+						for (nodeId = 0; nodeId < nodeList.length; nodeId++) {
+							arr.push(nodeList.item(nodeId));
+						}
+					}
+					return arr;
+				};
 
 				if (form) {
 					if (form.tagName.toLowerCase() === 'form') {
@@ -1970,9 +1929,6 @@
 							attributes.event.extraData = data;
 						}
 
-						call._executeHandlers(attributes.ih, attributes);
-						Wicket.Event.publish(Wicket.Event.Topic.AJAX_CALL_INIT, attributes);
-
 						var throttlingSettings = attributes.tr;
 						if (throttlingSettings) {
 							var postponeTimerOnUpdate = throttlingSettings.p || false;
@@ -1993,15 +1949,6 @@
 			process: function(data) {
 				var call = new Wicket.Ajax.Call();
 				call.process(data);
-			},
-
-			/**
-			 * An abstraction over native window.location.replace() to be able to suppress it for unit tests
-			 *
-			 * @param url The url to redirect to
-			 */
-			redirect: function(url) {
-				window.location = url;
 			}
 		},
 
@@ -2702,15 +2649,14 @@
 						Wicket.Log.info("Calling focus on " + WF.lastFocusId);
 						try {
 							if (WF.focusSetFromServer) {
-								// WICKET-5858
-								window.setTimeout(function () { toFocus.focus(); }, 0);
+								toFocus.focus();
 							} else {
 								// avoid loops like - onfocus triggering an event the modifies the tag => refocus => the event is triggered again
 								var temp = toFocus.onfocus;
 								toFocus.onfocus = null;
-								
+								toFocus.focus();
 								// IE needs setTimeout (it seems not to call onfocus sync. when focus() is called
-								window.setTimeout(function () {toFocus.focus(); toFocus.onfocus = temp; }, 0);
+								window.setTimeout(function () {toFocus.onfocus = temp; }, 0);
 							}
 						} catch (ignore) {
 						}
@@ -2815,9 +2761,7 @@
 
 		setup: function () {
 
-			if (Wicket.Browser.isIE()) {
-				// WICKET-5959: IE >= 11 supports "input" events, but triggers too often
-				// to be reliable
+			if (Wicket.Browser.isIELessThan11()) {
 
 				jQuery(this).on('keydown', function (event) {
 					jQuery.event.special.inputchange.keyDownPressed = true;
@@ -2883,7 +2827,7 @@
 	/**
 	 * Clear any scheduled Ajax timers when leaving the current page
 	 */
-	Wicket.Event.add(window, "unload", function() {
+	Wicket.Event.add(window, "beforeunload", function() {
 		var WTH = Wicket.TimerHandles;
 		if (WTH) {
 			for (var th in WTH) {

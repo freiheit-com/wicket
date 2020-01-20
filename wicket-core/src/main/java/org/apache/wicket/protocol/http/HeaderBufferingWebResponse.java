@@ -155,11 +155,6 @@ class HeaderBufferingWebResponse extends WebResponse implements IMetaDataBufferi
 	}
 
 	@Override
-	public void disableCaching() {
-		getMetaResponse().disableCaching();
-	}
-
-	@Override
 	public String encodeURL(CharSequence url)
 	{
 		return originalResponse.encodeURL(url);

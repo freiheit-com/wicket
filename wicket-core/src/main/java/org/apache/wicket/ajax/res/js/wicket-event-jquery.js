@@ -138,8 +138,8 @@
 				var wb = Wicket.Browser;
 				if (wb._isIE11 === null) {
 					var userAgent = window.navigator.userAgent;
-					var isTrident = userAgent.indexOf("Trident") > -1;
-					var is11 = userAgent.indexOf("rv:11") > -1;
+					var isTrident = userAgent.indexOf("Trident");
+					var is11 = userAgent.indexOf("rv:11");
 					wb._isIE11 = isTrident && is11;
 				}
 				return wb._isIE11;
@@ -315,7 +315,6 @@
 			Topic: {
 				DOM_NODE_REMOVING      : '/dom/node/removing',
 				DOM_NODE_ADDED         : '/dom/node/added',
-				AJAX_CALL_INIT         : '/ajax/call/init',
 				AJAX_CALL_BEFORE       : '/ajax/call/before',
 				AJAX_CALL_PRECONDITION : '/ajax/call/precondition',
 				AJAX_CALL_BEFORE_SEND  : '/ajax/call/beforeSend',
@@ -323,7 +322,6 @@
 				AJAX_CALL_COMPLETE     : '/ajax/call/complete',
 				AJAX_CALL_AFTER        : '/ajax/call/after',
 				AJAX_CALL_FAILURE      : '/ajax/call/failure',
-				AJAX_CALL_DONE         : '/ajax/call/done',
 				AJAX_HANDLERS_BOUND    : '/ajax/handlers/bound'
 			}
 		}

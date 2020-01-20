@@ -785,7 +785,7 @@ public abstract class Application implements UnboundListener, IEventSink
 		IRequestMapper root = getRootRequestMapper();
 		if (!(root instanceof ICompoundRequestMapper))
 		{
-			root = new SystemMapper(this).add(root);
+			root = new CompoundRequestMapper().add(root);
 			setRootRequestMapper(root);
 		}
 		return (ICompoundRequestMapper)root;

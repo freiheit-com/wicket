@@ -20,7 +20,6 @@ import java.util.Locale;
 
 import org.apache.wicket.Application;
 import org.apache.wicket.css.ICssCompressor;
-import org.apache.wicket.resource.IScopeAwareTextResourceProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,8 +31,6 @@ public class CssPackageResource extends PackageResource
 	private static final long serialVersionUID = 1L;
 
 	private static final Logger log = LoggerFactory.getLogger(CssPackageResource.class);
-
-	private final String name;
 
 	/**
 	 * Construct.
@@ -48,8 +45,6 @@ public class CssPackageResource extends PackageResource
 		String variation)
 	{
 		super(scope, name, locale, style, variation);
-
-		this.name = name;
 
 		// CSS resources can be compressed if there is configured ICssCompressor
 		setCompress(true);
@@ -66,19 +61,8 @@ public class CssPackageResource extends PackageResource
 		{
 			try
 			{
-				String charsetName = "UTF-8";
-				String nonCompressed = new String(processedResponse, charsetName);
-				String output;
-				if (compressor instanceof IScopeAwareTextResourceProcessor)
-				{
-					IScopeAwareTextResourceProcessor scopeAwareProcessor = (IScopeAwareTextResourceProcessor)compressor;
-					output = scopeAwareProcessor.process(nonCompressed, getScope(), name);
-				}
-				else
-				{
-					output = compressor.compress(nonCompressed);
-				}
-				return output.getBytes(charsetName);
+				String nonCompressed = new String(processedResponse, "UTF-8");
+				return compressor.compress(nonCompressed).getBytes();
 			}
 			catch (Exception e)
 			{

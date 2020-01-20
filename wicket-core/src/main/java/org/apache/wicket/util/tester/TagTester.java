@@ -540,10 +540,6 @@ public class TagTester
 				{
 					tester = new TagTester(parser, openTag, closeTag);
 				}
-				else if (openTag != null)
-				{
-					tester = new TagTester(parser, openTag, openTag);
-				}
 			}
 			catch (Exception e)
 			{

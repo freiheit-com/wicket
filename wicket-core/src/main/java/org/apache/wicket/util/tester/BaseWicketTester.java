@@ -59,7 +59,6 @@ import org.apache.wicket.ajax.AjaxEventBehavior;
 import org.apache.wicket.ajax.form.AjaxFormSubmitBehavior;
 import org.apache.wicket.ajax.markup.html.AjaxFallbackLink;
 import org.apache.wicket.ajax.markup.html.AjaxLink;
-import org.apache.wicket.ajax.markup.html.IAjaxLink;
 import org.apache.wicket.ajax.markup.html.form.AjaxSubmitLink;
 import org.apache.wicket.behavior.AbstractAjaxBehavior;
 import org.apache.wicket.core.request.handler.BookmarkablePageRequestHandler;
@@ -84,7 +83,6 @@ import org.apache.wicket.markup.html.form.IFormSubmitListener;
 import org.apache.wicket.markup.html.form.SubmitLink;
 import org.apache.wicket.markup.html.link.AbstractLink;
 import org.apache.wicket.markup.html.link.BookmarkablePageLink;
-import org.apache.wicket.markup.html.link.ExternalLink;
 import org.apache.wicket.markup.html.link.ILinkListener;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.link.ResourceLink;
@@ -123,7 +121,6 @@ import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.request.resource.IResource;
 import org.apache.wicket.request.resource.ResourceReference;
 import org.apache.wicket.session.ISessionStore.UnboundListener;
-import org.apache.wicket.settings.IApplicationSettings;
 import org.apache.wicket.settings.IRequestCycleSettings.RenderStrategy;
 import org.apache.wicket.util.lang.Args;
 import org.apache.wicket.util.lang.Classes;
@@ -259,58 +256,20 @@ public class BaseWicketTester
 	 */
 	public BaseWicketTester(final WebApplication application, final ServletContext servletCtx)
 	{
-		this(application, servletCtx, true);
-	}
-
-	/**
-	 * Creates a <code>WicketTester</code>.
-	 *
-	 * @param application
-	 *            a <code>WicketTester</code> <code>WebApplication</code> object
-	 * @param init
-	 *            force the application to be initialized (default = true)
-	 */
-	public BaseWicketTester(final WebApplication application, boolean init)
-	{
-		this(application, null, init);
-	}
-
-	/**
-	 * Creates a <code>WicketTester</code>.
-	 *
-	 * @param application
-	 *            a <code>WicketTester</code> <code>WebApplication</code> object
-	 * @param servletCtx
-	 *            the servlet context used as backend
-	 * @param init
-	 *            force the application to be initialized (default = true)
-	 */
-	public BaseWicketTester(final WebApplication application, final ServletContext servletCtx, boolean init)
-	{
-		if (!init)
-		{
-			Args.notNull(application, "application");
-		}
-
 		servletContext = servletCtx != null ? servletCtx
-				// If it's provided from the container it's not necessary to mock.
-				: !init && application.getServletContext() != null ? application.getServletContext()
-				: new MockServletContext(application, null);
+			: new MockServletContext(application, null);
 
-		// If using Arquillian and it's configured in a web.xml it'll be provided. If not, mock it.
-		if(application.getWicketFilter() == null)
+		final FilterConfig filterConfig = new TestFilterConfig();
+		WicketFilter filter = new WicketFilter()
 		{
-			final FilterConfig filterConfig = new TestFilterConfig();
-			WicketFilter filter = new WicketFilter()
+			@Override
+			public FilterConfig getFilterConfig()
 			{
-				@Override
-				public FilterConfig getFilterConfig()
-				{
-					return filterConfig;
-				}
-			};
-			application.setWicketFilter(filter);
-		}
+				return filterConfig;
+			}
+		};
+
+		application.setWicketFilter(filter);
 
 		httpSession = new MockHttpSession(servletContext);
 
@@ -318,22 +277,15 @@ public class BaseWicketTester
 
 		this.application = application;
 
-		// If it's provided from the container it's not necessary to set again.
-		if (init)
-		{
-			// FIXME some tests are leaking applications by not calling destroy on them or overriding
-			// teardown() without calling super, for now we work around by making each name unique
-			application.setName("WicketTesterApplication-" + UUID.randomUUID());
-		}
+		// FIXME some tests are leaking applications by not calling destroy on them or overriding
+		// teardown() without calling super, for now we work around by making each name unique
+		application.setName("WicketTesterApplication-" + UUID.randomUUID());
 		ThreadContext.setApplication(application);
 
-		// If it's provided from the container it's not necessary to set again and init.
-		if (init)
-		{
-			application.setServletContext(servletContext);
-			// initialize the application
-			application.initApplication();
-		}
+		application.setServletContext(servletContext);
+
+		// initialize the application
+		application.initApplication();
 
 		// We don't expect any changes during testing. In addition we avoid creating
 		// ModificationWatcher threads tests.
@@ -502,14 +454,13 @@ public class BaseWicketTester
 	 * @param filter
 	 *            filter used to cleanup messages, accepted messages will be removed
 	 */
-	protected void cleanupFeedbackMessages(IFeedbackMessageFilter filter)
+	private void cleanupFeedbackMessages(IFeedbackMessageFilter filter)
 	{
-		IApplicationSettings applicationSettings = application.getApplicationSettings();
-		IFeedbackMessageFilter old = applicationSettings.getFeedbackMessageCleanupFilter();
-		applicationSettings.setFeedbackMessageCleanupFilter(filter);
+		application.getApplicationSettings().setFeedbackMessageCleanupFilter(filter);
 		getLastRenderedPage().detach();
 		getSession().detach();
-		applicationSettings.setFeedbackMessageCleanupFilter(old);
+		application.getApplicationSettings().setFeedbackMessageCleanupFilter(
+			IFeedbackMessageFilter.NONE);
 	}
 
 	/**
@@ -1927,16 +1878,6 @@ public class BaseWicketTester
 			submitAjaxFormSubmitBehavior(link,
 				(AjaxFormSubmitBehavior)WicketTesterHelper.findAjaxEventBehavior(link, "onclick"));
 		}
-		// if the link is an IAjaxLink, use it (do check if AJAX is expected)
-		else if (linkComponent instanceof IAjaxLink && isAjax)
-		{
-			List<AjaxEventBehavior> behaviors = WicketTesterHelper.findAjaxEventBehaviors(
-				linkComponent, "click");
-			for (AjaxEventBehavior behavior : behaviors)
-			{
-				executeBehavior(behavior);
-			}
-		}
 		/*
 		 * If the link is a submitlink then we pretend to have clicked it
 		 */
@@ -1949,21 +1890,6 @@ public class BaseWicketTester
 
 			serializeFormToRequest(submitLink.getForm());
 			submitForm(submitLink.getForm().getPageRelativePath());
-		}
-		else if (linkComponent instanceof ExternalLink)
-		{
-			ExternalLink externalLink = (ExternalLink) linkComponent;
-			String href = externalLink.getDefaultModelObjectAsString();
-			try
-			{
-				getResponse().sendRedirect(href);
-				recordRequestResponse();
-				setupNextRequestCycle();
-			}
-			catch (IOException iox)
-			{
-				throw new WicketRuntimeException("An error occurred while redirecting to: " + href, iox);
-			}
 		}
 		// if the link is a normal link (or ResourceLink)
 		else if (linkComponent instanceof AbstractLink)

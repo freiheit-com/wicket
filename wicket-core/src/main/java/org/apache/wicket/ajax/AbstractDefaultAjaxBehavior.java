@@ -71,8 +71,6 @@ public abstract class AbstractDefaultAjaxBehavior extends AbstractAjaxBehavior
 	private static final String AFTER_HANDLER_FUNCTION_TEMPLATE = "function(attrs){%s}";
 	private static final String BEFORE_SEND_HANDLER_FUNCTION_TEMPLATE = "function(attrs, jqXHR, settings){%s}";
 	private static final String BEFORE_HANDLER_FUNCTION_TEMPLATE = "function(attrs){%s}";
-	private static final String INIT_HANDLER_FUNCTION_TEMPLATE = "function(attrs){%s}";
-	private static final String DONE_HANDLER_FUNCTION_TEMPLATE = "function(attrs){%s}";
 
 	/**
 	 * Subclasses should call super.onBind()
@@ -222,30 +220,23 @@ public abstract class AbstractDefaultAjaxBehavior extends AbstractAjaxBehavior
 
 		try
 		{
-			String formId = attributes.getFormId();
-			if (Strings.isEmpty(formId) == false)
-			{
-				attributesJson.put(AjaxAttributeName.FORM_ID.jsonName(), formId);
-			}
 			attributesJson.put(AjaxAttributeName.URL.jsonName(), getCallbackUrl());
-
-			String[] eventNames = attributes.getEventNames();
-			if (eventNames.length == 1)
+			Method method = attributes.getMethod();
+			if (Method.POST == method)
 			{
-				attributesJson.put(AjaxAttributeName.EVENT_NAME.jsonName(), eventNames[0]);
-			}
-			else
-			{
-				for (String eventName : eventNames)
-				{
-					attributesJson.append(AjaxAttributeName.EVENT_NAME.jsonName(), eventName);
-				}
+				attributesJson.put(AjaxAttributeName.METHOD.jsonName(), method);
 			}
 
 			if (component instanceof Page == false)
 			{
 				String componentId = component.getMarkupId();
 				attributesJson.put(AjaxAttributeName.MARKUP_ID.jsonName(), componentId);
+			}
+
+			String formId = attributes.getFormId();
+			if (Strings.isEmpty(formId) == false)
+			{
+				attributesJson.put(AjaxAttributeName.FORM_ID.jsonName(), formId);
 			}
 
 			if (attributes.isMultipart())
@@ -263,7 +254,8 @@ public abstract class AbstractDefaultAjaxBehavior extends AbstractAjaxBehavior
 			CharSequence childSelector = attributes.getChildSelector();
 			if (Strings.isEmpty(childSelector) == false)
 			{
-				attributesJson.put(AjaxAttributeName.CHILD_SELECTOR.jsonName(), childSelector);
+				attributesJson.put(AjaxAttributeName.CHILD_SELECTOR.jsonName(),
+						childSelector);
 			}
 
 			String indicatorId = findIndicatorId();
@@ -276,12 +268,6 @@ public abstract class AbstractDefaultAjaxBehavior extends AbstractAjaxBehavior
 			{
 				if (ajaxCallListener != null)
 				{
-					if (ajaxCallListener instanceof AjaxCallListener) {
-						CharSequence initHandler = ((AjaxCallListener) ajaxCallListener).getInitHandler(component);
-						appendListenerHandler(initHandler, attributesJson,
-							AjaxAttributeName.INIT_HANDLER.jsonName(),
-							INIT_HANDLER_FUNCTION_TEMPLATE);
-					}
 					CharSequence beforeHandler = ajaxCallListener.getBeforeHandler(component);
 					appendListenerHandler(beforeHandler, attributesJson,
 						AjaxAttributeName.BEFORE_HANDLER.jsonName(),
@@ -314,13 +300,6 @@ public abstract class AbstractDefaultAjaxBehavior extends AbstractAjaxBehavior
 					CharSequence precondition = ajaxCallListener.getPrecondition(component);
 					appendListenerHandler(precondition, attributesJson,
 						AjaxAttributeName.PRECONDITION.jsonName(), PRECONDITION_FUNCTION_TEMPLATE);
-
-					if (ajaxCallListener instanceof AjaxCallListener) {
-						CharSequence doneHandler = ((AjaxCallListener) ajaxCallListener).getDoneHandler(component);
-						appendListenerHandler(doneHandler, attributesJson,
-							AjaxAttributeName.DONE_HANDLER.jsonName(),
-							DONE_HANDLER_FUNCTION_TEMPLATE);
-					}
 				}
 			}
 
@@ -349,6 +328,19 @@ public abstract class AbstractDefaultAjaxBehavior extends AbstractAjaxBehavior
 				attributesJson.put(AjaxAttributeName.IS_ASYNC.jsonName(), false);
 			}
 
+			String[] eventNames = attributes.getEventNames();
+			if (eventNames.length == 1)
+			{
+				attributesJson.put(AjaxAttributeName.EVENT_NAME.jsonName(), eventNames[0]);
+			}
+			else
+			{
+				for (String eventName : eventNames)
+				{
+					attributesJson.append(AjaxAttributeName.EVENT_NAME.jsonName(), eventName);
+				}
+			}
+
 			AjaxChannel channel = attributes.getChannel();
 			if (channel != null && channel.equals(AjaxChannel.DEFAULT) == false)
 			{
@@ -358,12 +350,6 @@ public abstract class AbstractDefaultAjaxBehavior extends AbstractAjaxBehavior
 			if (attributes.isAllowDefault())
 			{
 				attributesJson.put(AjaxAttributeName.IS_ALLOW_DEFAULT.jsonName(), true);
-			}
-
-			Method method = attributes.getMethod();
-			if (Method.POST == method)
-			{
-				attributesJson.put(AjaxAttributeName.METHOD.jsonName(), method);
 			}
 
 			if (AjaxRequestAttributes.EventPropagation.BUBBLE.equals(attributes.getEventPropagation()))
@@ -554,11 +540,9 @@ public abstract class AbstractDefaultAjaxBehavior extends AbstractAjaxBehavior
 			}
 		}
 		sb.append("var params = ").append(jsonArray).append(";\n");
-		sb.append("attrs.")
-			.append(AjaxAttributeName.EXTRA_PARAMETERS)
-			.append(" = params.concat(attrs.")
-			.append(AjaxAttributeName.EXTRA_PARAMETERS)
-			.append(" || []);\n");
+		sb.append("attrs.").append(AjaxAttributeName.EXTRA_PARAMETERS)
+				.append(" = params.concat(attrs.")
+				.append(AjaxAttributeName.EXTRA_PARAMETERS).append(" || []);\n");
 		sb.append("Wicket.Ajax.ajax(attrs);\n");
 		return sb;
 	}

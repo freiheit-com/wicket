@@ -18,7 +18,6 @@ package org.apache.wicket.markup;
 
 import java.util.Deque;
 import java.util.LinkedList;
-
 import org.apache.wicket.util.lang.Args;
 
 /**
@@ -74,7 +73,7 @@ public abstract class AbstractMarkupFragment implements IMarkupFragment
 							{
 								canFind = true;
 							}
-							else if (wtag.isFragementTag() || wtag.isContainerTag())
+							else if (wtag.isFragementTag())
 							{
 								canFind = false;
 							}

@@ -413,13 +413,21 @@ public class StringResourceModel extends LoadableDetachableModel<String>
 		{
 			// Get the string resource, doing any property substitutions as part
 			// of the get operation
-			value = localizer.getString(getResourceKey(), component, model, null, null, defaultValue);
+			value = localizer.getString(getResourceKey(), component, model, defaultValue);
+			if (value == null)
+			{
+				value = defaultValue;
+			}
 		}
 		else
 		{
 			// Get the string resource, doing not any property substitutions
 			// that has to be done later after MessageFormat
-			value = localizer.getString(getResourceKey(), component, null, null, null, defaultValue);
+			value = localizer.getString(getResourceKey(), component, null, defaultValue);
+			if (value == null)
+			{
+				value = defaultValue;
+			}
 			if (value != null)
 			{
 				// Build the real parameters

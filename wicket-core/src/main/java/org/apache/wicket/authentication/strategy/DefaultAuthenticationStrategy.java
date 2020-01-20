@@ -18,9 +18,7 @@ package org.apache.wicket.authentication.strategy;
 
 import org.apache.wicket.Application;
 import org.apache.wicket.authentication.IAuthenticationStrategy;
-import org.apache.wicket.util.cookies.CookieDefaults;
 import org.apache.wicket.util.cookies.CookieUtils;
-import org.apache.wicket.util.crypt.CachingSunJceCryptFactory;
 import org.apache.wicket.util.crypt.ICrypt;
 import org.apache.wicket.util.lang.Args;
 import org.apache.wicket.util.string.Strings;
@@ -38,19 +36,17 @@ public class DefaultAuthenticationStrategy implements IAuthenticationStrategy
 	private static final Logger logger = LoggerFactory.getLogger(DefaultAuthenticationStrategy.class);
 
 	/** The cookie name to store the username and password */
-	protected final String cookieKey;
-
-	/** The key to use for encrypting/decrypting the cookie value  */
-	protected final String encryptionKey;
+	private final String cookieKey;
 
 	/** The separator used to concatenate the username and password */
-	protected final String VALUE_SEPARATOR = "-sep-";
+	private final String VALUE_SEPARATOR = "-sep-";
 
 	/** Cookie utils with default settings */
 	private CookieUtils cookieUtils;
 
 	/** Use to encrypt cookie values for username and password. */
 	private ICrypt crypt;
+
 
 	/**
 	 * Constructor
@@ -60,22 +56,7 @@ public class DefaultAuthenticationStrategy implements IAuthenticationStrategy
 	 */
 	public DefaultAuthenticationStrategy(final String cookieKey)
 	{
-		this(cookieKey, defaultEncryptionKey(cookieKey));
-	}
-
-	private static String defaultEncryptionKey(String cookieKey)
-	{
-		if (Application.exists())
-		{
-			return Application.get().getName();
-		}
-		return cookieKey;
-	}
-
-	public DefaultAuthenticationStrategy(final String cookieKey, final String encryptionKey)
-	{
 		this.cookieKey = Args.notEmpty(cookieKey, "cookieKey");
-		this.encryptionKey = Args.notEmpty(encryptionKey, "encryptionKey");
 	}
 
 	/**
@@ -87,8 +68,7 @@ public class DefaultAuthenticationStrategy implements IAuthenticationStrategy
 	{
 		if (cookieUtils == null)
 		{
-			CookieDefaults settings = new CookieDefaults();
-			cookieUtils = new CookieUtils(settings);
+			cookieUtils = new CookieUtils();
 		}
 		return cookieUtils;
 	}
@@ -100,12 +80,14 @@ public class DefaultAuthenticationStrategy implements IAuthenticationStrategy
 	{
 		if (crypt == null)
 		{
-			CachingSunJceCryptFactory cryptFactory = new CachingSunJceCryptFactory(encryptionKey);
-			crypt = cryptFactory.newCrypt();
+			crypt = Application.get().getSecuritySettings().getCryptFactory().newCrypt();
 		}
 		return crypt;
 	}
 
+	/**
+	 * @see org.apache.wicket.authentication.IAuthenticationStrategy#load()
+	 */
 	@Override
 	public String[] load()
 	{
@@ -124,39 +106,32 @@ public class DefaultAuthenticationStrategy implements IAuthenticationStrategy
 				getCookieUtils().remove(cookieKey);
 				value = null;
 			}
-			return decode(value);
+			if (Strings.isEmpty(value) == false)
+			{
+				String username = null;
+				String password = null;
+
+				String[] values = value.split(VALUE_SEPARATOR);
+				if ((values.length > 0) && (Strings.isEmpty(values[0]) == false))
+				{
+					username = values[0];
+				}
+				if ((values.length > 1) && (Strings.isEmpty(values[1]) == false))
+				{
+					password = values[1];
+				}
+
+				return new String[] { username, password };
+			}
 		}
 
 		return null;
 	}
 
 	/**
-	 * This method will decode decrypted cookie value based on application needs
-	 *
-	 * @param value decrypted cookie value
-	 * @return decomposed values array, or null in case cookie value was empty.
+	 * @see org.apache.wicket.authentication.IAuthenticationStrategy#save(java.lang.String,
+	 *      java.lang.String)
 	 */
-	protected String[] decode(String value) {
-		if (Strings.isEmpty(value) == false)
-		{
-			String username = null;
-			String password = null;
-
-			String[] values = value.split(VALUE_SEPARATOR);
-			if ((values.length > 0) && (Strings.isEmpty(values[0]) == false))
-			{
-				username = values[0];
-			}
-			if ((values.length > 1) && (Strings.isEmpty(values[1]) == false))
-			{
-				password = values[1];
-			}
-
-			return new String[] { username, password };
-		}
-		return null;
-	}
-
 	@Override
 	public void save(final String username, final String password)
 	{
@@ -167,6 +142,9 @@ public class DefaultAuthenticationStrategy implements IAuthenticationStrategy
 		getCookieUtils().save(cookieKey, encryptedValue);
 	}
 
+	/**
+	 * @see org.apache.wicket.authentication.IAuthenticationStrategy#remove()
+	 */
 	@Override
 	public void remove()
 	{

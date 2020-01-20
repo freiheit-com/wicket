@@ -145,10 +145,8 @@ import org.slf4j.LoggerFactory;
  * @param <T>
  *            The model object type
  */
-public class Form<T> extends WebMarkupContainer
-	implements
-		IFormSubmitListener,
-		IGenericComponent<T>
+public class Form<T> extends WebMarkupContainer implements IFormSubmitListener,
+	IGenericComponent<T>
 {
 	private static final String HIDDEN_DIV_START = "<div style=\"width:0px;height:0px;position:absolute;left:-100px;top:-100px;overflow:hidden\">";
 
@@ -600,11 +598,9 @@ public class Form<T> extends WebMarkupContainer
 
 	/**
 	 * Gets maximum size for each file of an upload.
-	 * 
 	 * @return
 	 */
-	public Bytes getFileMaxSize()
-	{
+	public Bytes getFileMaxSize() {
 		return fileMaxSize;
 	}
 
@@ -893,17 +889,6 @@ public class Form<T> extends WebMarkupContainer
 		return false;
 	}
 
-	/**
-	 * Whether this *nested* form wants to be submitted when parent form is submitted. By default,
-	 * this is true, so when a parent form is submitted, the nested form is also submitted. If this
-	 * method is overridden to return false, it will not be validated, processed nor submitted.
-	 * 
-	 * @return {@code true} by default
-	 */
-	public boolean wantSubmitOnParentFormSubmit()
-	{
-		return true;
-	}
 
 	/**
 	 * Process the form. Though you can override this method to provide your own algorithm, it is
@@ -915,7 +900,8 @@ public class Form<T> extends WebMarkupContainer
 	 * 
 	 * @param submittingComponent
 	 *            component responsible for submitting the form, or <code>null</code> if none (eg
-	 *            the form has been submitted via the enter key or javascript calling form.submit())
+	 *            the form has been submitted via the enter key or javascript calling
+	 *            form.submit())
 	 * 
 	 * @see #delegateSubmit(IFormSubmitter) for an easy way to process submitting component in the
 	 *      default manner
@@ -1015,8 +1001,7 @@ public class Form<T> extends WebMarkupContainer
 			public void component(final Component component, final IVisit<Void> visit)
 			{
 				Form<?> form = (Form<?>)component;
-				if (form.isEnabledInHierarchy() && form.isVisibleInHierarchy() &&
-					form.wantSubmitOnParentFormSubmit())
+				if (form.isEnabledInHierarchy() && isVisibleInHierarchy())
 				{
 					form.setFlag(FLAG_SUBMITTED, true);
 					return;
@@ -1068,11 +1053,9 @@ public class Form<T> extends WebMarkupContainer
 
 	/**
 	 * Sets maximum size of each file in upload request.
-	 * 
 	 * @param fileMaxSize
 	 */
-	public void setFileMaxSize(Bytes fileMaxSize)
-	{
+	public void setFileMaxSize(Bytes fileMaxSize) {
 		this.fileMaxSize = fileMaxSize;
 	}
 
@@ -1158,8 +1141,7 @@ public class Form<T> extends WebMarkupContainer
 			@Override
 			public void component(final Component component, final IVisit<Boolean> visit)
 			{
-				if (component.isVisibleInHierarchy() && component.isEnabledInHierarchy() &&
-					component.hasErrorMessage())
+				if (component.hasErrorMessage())
 				{
 					visit.stop(true);
 				}
@@ -1229,6 +1211,7 @@ public class Form<T> extends WebMarkupContainer
 	protected void appendDefaultButtonField(final MarkupStream markupStream,
 		final ComponentTag openTag)
 	{
+
 		AppendingStringBuffer buffer = new AppendingStringBuffer();
 
 		// div that is not visible (but not display:none either)
@@ -1291,7 +1274,7 @@ public class Form<T> extends WebMarkupContainer
 			@Override
 			public void component(Form<?> form, IVisit<Void> visit)
 			{
-				if (form.isSubmitted())
+				if (form.isEnabledInHierarchy() && form.isVisibleInHierarchy())
 				{
 					forms.add(form);
 				}
@@ -1420,8 +1403,7 @@ public class Form<T> extends WebMarkupContainer
 			try
 			{
 				ServletWebRequest request = (ServletWebRequest)getRequest();
-				final MultipartServletWebRequest multipartWebRequest = request.newMultipartWebRequest(
-					getMaxSize(), getPage().getId());
+				final MultipartServletWebRequest multipartWebRequest = request.newMultipartWebRequest(getMaxSize(), getPage().getId());
 				multipartWebRequest.setFileMaxSize(getFileMaxSize());
 				multipartWebRequest.parseFileParts();
 
@@ -1462,8 +1444,7 @@ public class Form<T> extends WebMarkupContainer
 		{
 			// Resource key should be <form-id>.uploadTooLarge to
 			// override default message
-			String msg = getString(getId() + '.' + UPLOAD_TOO_LARGE_RESOURCE_KEY,
-				Model.ofMap(model));
+			String msg = getString(getId() + '.' + UPLOAD_TOO_LARGE_RESOURCE_KEY, Model.ofMap(model));
 			error(msg);
 		}
 		else if (e instanceof FileUploadBase.FileSizeLimitExceededException)
@@ -1543,7 +1524,7 @@ public class Form<T> extends WebMarkupContainer
 			@Override
 			public void component(final Form<?> form, final IVisit<Void> visit)
 			{
-				if (form.isSubmitted())
+				if (form.isEnabledInHierarchy() && form.isVisibleInHierarchy())
 				{
 					form.internalMarkFormComponentsValid();
 				}
@@ -1838,9 +1819,10 @@ public class Form<T> extends WebMarkupContainer
 			@Override
 			public void component(final Form<?> form, final IVisit<Void> visit)
 			{
-				if (form.isSubmitted())
+				if (form.isEnabledInHierarchy() && form.isVisibleInHierarchy())
 				{
 					form.internalUpdateFormComponentModels();
+
 				}
 				else
 				{
@@ -1890,8 +1872,8 @@ public class Form<T> extends WebMarkupContainer
 	}
 
 	/**
-	 * Calls {@linkplain #onValidateModelObjects()} on this form and all nested forms that are
-	 * visible and enabled
+	 * Calls {@linkplain #onValidateModelObjects()} on this form and all
+	 * nested forms that are visible and enabled
 	 */
 	private void internalOnValidateModelObjects()
 	{
@@ -1899,11 +1881,11 @@ public class Form<T> extends WebMarkupContainer
 		visitChildren(Form.class, new IVisitor<Form<?>, Void>()
 		{
 			@Override
-			public void component(Form<?> form, IVisit<Void> visit)
+			public void component(Form<?> nestedForm, IVisit<Void> visit)
 			{
-				if (form.isSubmitted())
+				if (nestedForm.isEnabledInHierarchy() && nestedForm.isVisibleInHierarchy())
 				{
-					form.onValidateModelObjects();
+					nestedForm.onValidateModelObjects();
 				}
 				else
 				{
@@ -2045,7 +2027,7 @@ public class Form<T> extends WebMarkupContainer
 					return;
 				}
 
-				if (form.isSubmitted())
+				if (form.isEnabledInHierarchy() && form.isVisibleInHierarchy())
 				{
 					form.validateComponents();
 					form.validateFormValidators();
@@ -2054,6 +2036,7 @@ public class Form<T> extends WebMarkupContainer
 			}
 		}, new ClassVisitFilter(Form.class));
 	}
+
 
 	/**
 	 * Allows to customize input names of form components inside this form.
@@ -2153,9 +2136,9 @@ public class Form<T> extends WebMarkupContainer
 
 		/*
 		 * Certain input names causes problems with JavaScript. If the input name would cause a
-		 * problem, we create a replacement unique name by prefixing the name with a path that would
-		 * otherwise never be used (blank id in path).
-		 * 
+		 * problem, we create a replacement unique name by prefixing the name with a path that
+		 * would otherwise never be used (blank id in path).
+		 *
 		 * Input names must start with [A-Za-z] according to HTML 4.01 spec. HTML 5 allows almost
 		 * anything.
 		 */
@@ -2175,7 +2158,8 @@ public class Form<T> extends WebMarkupContainer
 	 * 
 	 * @author igor
 	 */
-	public static enum MethodMismatchResponse {
+	public static enum MethodMismatchResponse
+	{
 		/**
 		 * Continue processing.
 		 */

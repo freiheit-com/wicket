@@ -59,14 +59,7 @@ public class PageManagerDecorator implements IPageManager
 		delegate.touchPage(page);
 	}
 
-	public void untouchPage(IManageablePage page)
-	{
-		if (delegate instanceof AbstractPageManager) {
-			AbstractPageManager apm = (AbstractPageManager) delegate;
-			apm.untouchPage(page);
-		}
-	}
-
+	/** {@inheritDoc} */
 	@Override
 	public boolean supportsVersioning()
 	{
